@@ -1,0 +1,19 @@
+Musique de fond (facultative, désactivée par défaut)
+===================================================
+
+Déposez ici vos fichiers audio (mp3, wav, m4a, ogg, flac) dont vous avez le droit d'usage
+(musique libre de droits, CC0, CC BY, bibliothèque audio de YouTube, achat avec licence...).
+
+Chaque piste DOIT être accompagnée d'un fichier texte du même nom qui déclare sa licence,
+sinon elle est ignorée. Exemple pour calm_news.mp3, créez calm_news.txt contenant :
+
+licence: CC BY 4.0
+credit: "Calm News" by Jane Doe (https://example.org)
+
+Le crédit est repris dans la liste des crédits de la vidéo (description lors de la publication).
+
+Activer la musique :   run.bat set-option video.music true
+Vérifier les pistes :  run.bat music
+Choisir une piste :    run.bat set-option video.music_track calm_news.mp3   (sinon rotation automatique)
+
+L'application ne télécharge jamais de musique.

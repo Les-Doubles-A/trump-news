@@ -1,0 +1,12 @@
+Effet sonore des transitions (facultatif, désactivé par défaut)
+==============================================================
+
+Déposez ici UN court fichier audio (ex. whoosh.wav, moins d'une seconde) dont vous avez le droit d'usage,
+avec un fichier texte du même nom déclarant sa licence (ex. whoosh.txt) :
+
+licence: CC0
+
+S'il y a plusieurs fichiers, le premier par ordre alphabétique est utilisé.
+
+Activer :   run.bat set-option video.sfx true
+Vérifier :  run.bat music

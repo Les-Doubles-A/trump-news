@@ -1,0 +1,141 @@
+app:
+  name: Trump News
+  timezone: Europe/Paris
+  language: en            # en | fr | es
+  log_level: INFO
+
+llm:
+  provider: lmstudio
+  endpoint: http://localhost:1234
+  model: auto             # "auto" = premier modèle de chat chargé dans LM Studio
+  timeout_s: 120
+  retries: 3
+  temperature: 0.3
+  max_tokens: 2048
+
+storage:
+  data_dir: data
+  database: trump_news.db   # relatif à data_dir
+
+news:
+  # Types : rss (url), google_news (query), gdelt (query). Mettez enabled: false pour désactiver un flux.
+  providers:
+    - {type: google_news, name: "Google News - Trump", query: "Donald Trump"}
+    - {type: rss, name: "BBC US & Canada", url: "https://feeds.bbci.co.uk/news/world/us_and_canada/rss.xml"}
+    - {type: rss, name: "NPR Politics", url: "https://feeds.npr.org/1014/rss.xml"}
+    - {type: rss, name: "The Guardian US Politics", url: "https://www.theguardian.com/us-news/us-politics/rss"}
+    - {type: rss, name: "Politico", url: "https://rss.politico.com/politics-news.xml"}
+    - {type: rss, name: "Fox News Politics", url: "https://moxie.foxnews.com/google-publisher/politics.xml"}
+    # Flux directs : fournissent un résumé, ce qui permet un meilleur fact-check que les titres seuls de Google News
+    - {type: rss, name: "New York Times Politics", url: "https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml"}
+    - {type: rss, name: "Washington Post Politics", url: "https://feeds.washingtonpost.com/rss/politics"}
+    - {type: rss, name: "PBS NewsHour Politics", url: "https://www.pbs.org/newshour/feeds/rss/politics"}
+    - {type: rss, name: "CNBC Politics", url: "https://www.cnbc.com/id/10000113/device/rss/rss.html"}
+    - {type: rss, name: "Al Jazeera", url: "https://www.aljazeera.com/xml/rss/all.xml"}
+    - {type: rss, name: "NBC News Politics", url: "https://feeds.nbcnews.com/nbcnews/public/politics"}
+    - {type: rss, name: "CBS News Politics", url: "https://www.cbsnews.com/latest/rss/politics"}
+    - {type: rss, name: "ABC News Politics", url: "https://abcnews.go.com/abcnews/politicsheadlines"}
+    - {type: rss, name: "The Hill", url: "https://thehill.com/homenews/feed/"}
+    # - {type: gdelt, name: "GDELT - Trump", query: "Trump", enabled: false}
+  keywords: ["trump"]           # un article doit en mentionner un (titre ou texte)
+  max_age_hours: 72
+  similarity_threshold: 0.5     # regroupement par mots communs (plus haut = plus strict)
+  embeddings:                   # regroupement par le sens, via un modèle d'embedding de LM Studio
+    enabled: true               # repli automatique sur les mots si aucun modèle n'est disponible
+    model: auto
+    threshold: 0.8              # cosinus minimal ; baissez-le (0.75) pour fusionner davantage
+  # scoring: {w_recency: 1.2, half_life_hours: 12}   # poids et listes de termes modifiables
+  # source_reliability: {reuters: 0.92}              # fiabilité par éditeur (0..1), modifiable
+
+factcheck:
+  fetch_full_text: true         # lit le texte des articles (robots.txt respecté) pour des citations vérifiables
+  max_sources: 6
+  max_input_chars: 9000         # contexte LM Studio recommandé : 8192 minimum
+  disable_thinking: true        # Qwen3 : ajoute /no_think
+  confirmed_min_sources: 3      # CONFIRMED = relayé par >= 3 éditeurs indépendants
+  likely_min_sources: 2
+
+script:
+  max_attempts: 3               # le script est régénéré avec la liste des erreurs détectées
+  max_opinion_segments: 2       # tons pro_trump / anti_trump : opinions étiquetées autorisées
+  llm_verify: true              # 2e passe LLM : détecte toute information ajoutée au-delà des affirmations
+  adapt_duration: true          # durée réduite automatiquement si peu d'affirmations vérifiées
+  strict_entities: false        # true : rejeter tout nom propre absent des affirmations vérifiées
+  # words_per_second: {en: 2.5, fr: 2.7, es: 2.8}   # débit de narration, pour calibrer la durée
+
+tts:
+  provider: edge            # edge (gratuit, internet) | piper (local, hors ligne) | elevenlabs (API payante)
+  fallback: piper           # essayé si le fournisseur principal échoue ; null pour désactiver
+  speed: 1.0                # 0.7 - 1.3
+  pause_s: 0.25             # silence entre deux segments (0.4 s après le hook)
+  normalize_loudness: true  # -16 LUFS (nécessite FFmpeg)
+  # pronunciations: {Zelensky: "Zelenski"}   # corrige la lecture d'un mot
+  edge:
+    voices: {en: en-US-AndrewNeural, fr: fr-FR-HenriNeural, es: es-ES-AlvaroNeural}
+  piper:
+    executable: piper       # pip install piper-tts, puis : run.bat download-voice en_US-lessac-medium
+    models_dir: data/voices
+  elevenlabs:
+    model: eleven_multilingual_v2
+    voices: {}              # ex. {en: "<voice_id>"} ; clé : variable ELEVENLABS_API_KEY
+    stability: 0.5
+    cost_per_1k_chars: 0.0
+
+visuals:
+  order: [user, wikimedia, pexels, ai, cards]   # ordre d'essai ; « cards » (cartes générées) est le dernier recours
+  user_dir: assets/user_images                  # vos images : mots du nom de fichier = mots-clés (ex. white_house_podium.jpg)
+  wikimedia:
+    enabled: true           # photos libres (domaine public, CC0, CC BY) avec crédits automatiques
+    contact: ""             # votre e-mail ou URL (exigé par Wikimedia dans le User-Agent)
+    allow_share_alike: false
+  pexels:
+    enabled: false          # photos génériques libres ; clé gratuite dans PEXELS_API_KEY
+  ai:
+    enabled: false          # Stable Diffusion local (Automatic1111/Forge lancé avec --api) : illustrations stylisées, jamais de photo réaliste
+    url: http://127.0.0.1:7860
+  cards:
+    enabled: true
+
+video:
+  resolution: 1080x1920
+  fps: 30
+  template: auto            # auto | breaking_news | news_fast | minimal | documentary | political
+  subtitles: true           # sous-titres mot par mot
+  subtitles_on_cards: false # masqués pendant les cartes qui affichent déjà le texte
+  transitions: true
+  music: false              # vos fichiers dans assets/music, avec licence déclarée (voir assets/music/LISEZMOI.txt)
+  sfx: false                # effet sonore sur les transitions (assets/sfx)
+  crf: 20                   # qualité H.264 (plus bas = meilleur, plus lourd)
+  preset: medium
+
+editorial:
+  mode: semi_auto         # semi_auto | full_auto
+  tone: neutral           # neutral | pro_trump | anti_trump | balanced
+  style: neutral_news
+  duration_s: 45
+
+quality:
+  min_score: 0.7
+
+scheduler:
+  enabled: true
+  times: ["08:00", "13:00", "18:00"]   # heures du PC ; puis run.bat schedule install
+  timezone: Europe/Paris
+
+publishing:
+  require_approval: true          # seul un script approuvé (run.bat approve) est publié
+  hashtags: [Trump, news, politics]
+  youtube:
+    enabled: false
+    privacy: private              # private | unlisted | public
+    category_id: "25"             # Actualités et politique
+    made_for_kids: false
+  tiktok:
+    enabled: false
+    privacy: SELF_ONLY            # privé tant que TikTok n'a pas audité l'application
+    redirect_port: 3455           # adresse à déclarer chez TikTok : http://localhost:3455/callback/
+  instagram:
+    enabled: false
+    user_id: ""                   # rempli par run.bat connect instagram
+    api_version: v25.0
+    share_to_feed: true
