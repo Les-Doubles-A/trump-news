@@ -1,7 +1,7 @@
 ﻿; Installeur Inno Setup de trump-news. Compilation : iscc installer\trump-news.iss
-; Le setup est cree dans installer\Output\trump-news-Setup-0.8.0.exe
+; Le setup est cree dans installer\Output\trump-news-Setup-0.8.1.exe
 #define MyAppName "trump-news"
-#define MyAppVersion "0.8.0"
+#define MyAppVersion "0.8.1"
 #define MyAppURL "https://github.com/Les-Doubles-A/trump-news"
 
 [Setup]
@@ -25,6 +25,8 @@ WizardStyle=modern
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 CloseApplications=yes
+SetupIconFile=..\assets\icon.ico
+UninstallDisplayIcon={app}\assets\icon.ico
 
 [Languages]
 Name: "french"; MessagesFile: "compiler:Languages\French.isl"
@@ -46,7 +48,7 @@ Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
 Name: "{app}\data"
 
 [Icons]
-Name: "{autoprograms}\Trump News"; Filename: "{app}\run.bat"; Parameters: "ui"; WorkingDir: "{app}"
+Name: "{autoprograms}\Trump News"; Filename: "{app}\run.bat"; Parameters: "ui"; WorkingDir: "{app}"; IconFilename: "{app}\assets\icon.ico"
 Name: "{autoprograms}\Trump News - dossier"; Filename: "{app}"
 
 [Run]
